@@ -17,6 +17,24 @@ require_file() {
 [[ "$(uname -m)" == "aarch64" ]] || fail "Use 64-bit Raspberry Pi OS (aarch64); detected $(uname -m)."
 command -v apt-get >/dev/null || fail "This installer requires Raspberry Pi OS or another apt-based OS."
 
+python3 - <<'PY'
+import platform
+import sys
+
+if sys.version_info < (3, 11):
+    raise SystemExit("ERROR: Python 3.11 or newer is required for the ARM64 ONNX Runtime wheel.")
+
+libc_name, libc_version = platform.libc_ver()
+try:
+    libc_parts = tuple(int(part) for part in libc_version.split(".")[:2])
+except ValueError:
+    libc_parts = ()
+if libc_name != "glibc" or libc_parts < (2, 28):
+    raise SystemExit(
+        f"ERROR: glibc 2.28 or newer is required for ARM64 wheels; detected {libc_name} {libc_version}."
+    )
+PY
+
 require_file "$PROJECT_DIR/pipeline_utils.py"
 require_file "$PROJECT_DIR/pc_training/app_gui.py"
 require_file "$MODEL_DIR/clear_vision_ood_aware.onnx"
@@ -37,13 +55,12 @@ printf 'Installing Raspberry Pi OS packages...\n'
 run_root apt-get update
 run_root apt-get install -y \
     python3-full \
-    python3-numpy \
-    python3-opencv \
     python3-pyqt6 \
     python3-venv \
     v4l-utils \
     libgl1 \
-    libglib2.0-0
+    libglib2.0-0 \
+    libportaudio2
 
 if [[ ! -x "$VENV_DIR/bin/python" ]]; then
     python3 -m venv --system-site-packages "$VENV_DIR"
@@ -51,7 +68,7 @@ fi
 
 printf 'Installing Python inference and eye-tracking packages...\n'
 "$VENV_DIR/bin/python" -m pip install --upgrade pip
-"$VENV_DIR/bin/python" -m pip install onnxruntime mediapipe
+"$VENV_DIR/bin/python" -m pip install onnxruntime==1.30.0 mediapipe==1.1.0
 
 printf 'Checking runtime imports, model files, and camera backend...\n'
 PYTHONPATH="$PROJECT_DIR/pc_training:$PROJECT_DIR${PYTHONPATH:+:$PYTHONPATH}" \
