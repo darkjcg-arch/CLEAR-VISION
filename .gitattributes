@@ -1,0 +1,4 @@
+*.onnx binary
+*.onnx.data binary
+*.task binary
+*.sh text eol=lf

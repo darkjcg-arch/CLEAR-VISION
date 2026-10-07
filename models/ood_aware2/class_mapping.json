@@ -1,0 +1,14 @@
+{
+  "class_to_idx": {
+    "cataracts": 0,
+    "healthy": 1,
+    "pterygium": 2,
+    "unknown": 3
+  },
+  "idx_to_class": {
+    "0": "cataracts",
+    "1": "healthy",
+    "2": "pterygium",
+    "3": "unknown"
+  }
+}
